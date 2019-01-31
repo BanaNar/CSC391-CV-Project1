@@ -1,4 +1,4 @@
-# Project 1
+#Computer Vision - Project1
 
 This assignment contains three main parts: spatial filtering, frequency analysis, and frequency filtering. It
 is designed for you to explore and gain deeper understanding of the underlying concepts in these topics by
