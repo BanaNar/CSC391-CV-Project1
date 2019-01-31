@@ -1,3 +1,5 @@
+# Project 1
+
 This assignment contains three main parts: spatial filtering, frequency analysis, and frequency filtering. It
 is designed for you to explore and gain deeper understanding of the underlying concepts in these topics by
 implementing code, experimenting on real images, and making observations and drawing conclusions about
