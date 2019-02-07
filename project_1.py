@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import skimage as ski
+from mpl_toolkits.mplot3d import Axes3D
 
 # Load and show my image
 # Read image of puppy
@@ -34,25 +35,31 @@ cv2.imwrite('img-flt.jpg',filterImg.astype(np.uint8))
 # Apply both Gaussian filter and Median filters to original image
 # Change the (k, k) to adjust filter size
 imgNoisy = cv2.imread('DSC_9259-0.40.JPG')
-blur = cv2.GaussianBlur(imgNoisy,(3,3),0)
-median = cv2.medianBlur(imgNoisy,3)
+blur = cv2.GaussianBlur(imgNoisy,(27,27),0)
+median = cv2.medianBlur(imgNoisy,27)
 
 cv2.imshow('Original', imgNoisy)
 cv2.imshow('Gaussian', blur)
 cv2.imshow('Median', median)
+cv2.imwrite('Original Noisy.jpg', imgNoisy)
+cv2.imwrite('Gaussian.jpg', blur)
+cv2.imwrite('Median.jpg', median)
 
 # Apply canny to original puppy and noisy pussy
 cannyImg = cv2.Canny(img, 50, 200)
 cannyNoisy = cv2.Canny(imgNoisy, 200, 350) # If too much noise, increase value
 cv2.imshow('Canny1', cannyImg)
 cv2.imshow('Canny2', cannyNoisy)
+cv2.imwrite('CannyPuppy.jpg', cannyImg)
+cv2.imwrite('CannyPuppyNoisy.jpg', cannyNoisy)
 
 # Apply canny to landscape image
 land = cv2.imread('window-00-04.jpg')
-cannyLand = cv2.Canny(land, 50, 240)
+cannyLand = cv2.Canny(land, 20, 240)
 cv2.imshow('Canny Land', cannyLand)
+cv2.imwrite('cannyEdge.jpg', cannyLand)
 
-# ========================== Frequency Analysis 4.1 ===========================================
+# ========================== Frequency Analysis 4.1 ==========================================
 
 # # Convert the image into grayscale image
 grayImg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -66,8 +73,18 @@ F2_grayImg = np.fft.fft2(grayImg.astype(float))
 Y = (np.linspace(-int(grayImg.shape[0]/2), int(grayImg.shape[0]/2)-1, grayImg.shape[0]))
 X = (np.linspace(-int(grayImg.shape[1]/2), int(grayImg.shape[1]/2)-1, grayImg.shape[1]))
 X, Y = np.meshgrid(X, Y)
-# Plot the magnitude as image
-plt.show()
+
+# plot the magnitude
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_surface(X, Y, np.fft.fftshift(np.abs(F2_grayImg)), cmap=plt.cm.coolwarm, linewidth=0, antialiased=False)
+plt.title("Magnitude of Fourier Coefficients"), plt.show()  # Plot the magnitude as 3-D image
+
+# plot the magnitude w/ Log(magnitude + 1) plot: shrinks the range so that small differences are visible
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_surface(X, Y, np.fft.fftshift(np.log(np.abs(F2_grayImg)+1)), cmap=plt.cm.coolwarm, linewidth=0, antialiased=False)
+plt.title("Magnitude of Fourier Coefficients with Log"), plt.show()  # Plot the magnitude as 3-D image
 
 # Plot the magnitude and the log(magnitude + 1) as images (view from the top)
 
@@ -76,19 +93,25 @@ magnitudeImage = np.fft.fftshift(np.abs(F2_grayImg))
 magnitudeImage = magnitudeImage / magnitudeImage.max()   # scale to [0, 1]
 magnitudeImage = ski.img_as_ubyte(magnitudeImage)
 cv2.imshow('Magnitude plot', magnitudeImage)
+cv2.imwrite('MagPlot.jpg', magnitudeImage)
 
 # Log(magnitude + 1) plot: shrinks the range so that small differences are visible
 logMagnitudeImage = np.fft.fftshift(np.log(np.abs(F2_grayImg)+1))
 logMagnitudeImage = logMagnitudeImage / logMagnitudeImage.max()   # scale to [0, 1]
 logMagnitudeImage = ski.img_as_ubyte(logMagnitudeImage)
 cv2.imshow('Log Magnitude plot', logMagnitudeImage)
+cv2.imwrite('LogMagPlot.jpg', logMagnitudeImage)
 
 # ========================== Frequency Analysis 4.2 ===========================================
+
+# Take the previous landscape image and noisy puppy image
+land = cv2.imread('window-00-04.jpg')
+imgNoisy = cv2.imread('DSC_9259-0.40.JPG')
 
 # Calculate the index of the middle column in the image
 col = int(grayImg.shape[1]/2)
 # Obtain the image data for this column
-#colData = smallNoisy[0:smallNoisy.shape[0], col, 0]
+#colData = gray[0:smallNoisy.shape[0], col, 0]
 colData = img[0:grayImg.shape[0], col, 0]
 
 # Plot the column data as a function
@@ -100,16 +123,81 @@ plt.show()
 
 # Compute the 1-D Fourier transform of colData
 F_colData = np.fft.fft(colData.astype(float))
+# F_land = np.fft.fft(land.astype(float))
+# F_imgNoisy = np.fft.fft(imgNoisy.astype(float))
 
-# Plot the magnitude of the Fourier coefficients as a stem plot
-# Notice the use off fftshift() to center the low frequency coefficients around 0
-#xvalues = np.linspace(-int(len(colData)/2), int(len(colData)/2)-1, len(colData))
-markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.abs(F_colData)), 'g')
-xvalues = np.linspace(0, len(colData), len(colData))
-#markerline, stemlines, baseline = plt.stem(xvalues, (np.abs(F_colData)), 'g')
+# Original Image
+col_image = int(img.shape[1]/2)
+# Obtain the image data for this column
+colData_image = img[0:img.shape[0], col_image, 0]
+# 1-D Fourier
+F_colData_image = np.fft.fft(colData_image.astype(float))
+
+# Landscape
+col_land = int(land.shape[1]/2)
+# Obtain the image data for this column
+colData_land = land[0:land.shape[0], col_land, 0]
+# 1-D Fourier
+F_colData_land = np.fft.fft(colData_land.astype(float))
+
+# Noisy Puppy
+col_imgNoisy = int(imgNoisy.shape[1]/2)
+# Obtain the image data for this column
+colData_imgNoisy = imgNoisy[0:imgNoisy.shape[0], col_imgNoisy, 0]
+# 1-D Fourier
+F_colData_imgNoisy = np.fft.fft(colData_imgNoisy.astype(float))
+
+# Plot
+# image
+xvalues = np.linspace(-int(len(colData_image)/2), int(len(colData_image)/2)-1, len(colData_image))
+#xvalues = np.linspace(0, len(colData_image), len(colData_image))
+markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.abs(F_colData_image)), 'g')  # fftshift() to center the low frequency coefficients around 0
 plt.setp(markerline, 'markerfacecolor', 'g')
 plt.setp(baseline, 'color','r', 'linewidth', 0.5)
-plt.show()
+plt.title("1-D Fourier Coef Mag - image"), plt.show()
+
+# land
+xvalues = np.linspace(-int(len(colData_land)/2), int(len(colData_land)/2)-1, len(colData_land))
+#xvalues = np.linspace(0, len(colData_land), len(colData_land))
+markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.abs(F_colData_land)), 'g')  # fftshift() to center the low frequency coefficients around 0
+plt.setp(markerline, 'markerfacecolor', 'g')
+plt.setp(baseline, 'color','r', 'linewidth', 0.5)
+plt.title("1-D Fourier Coef Mag - land"), plt.show()
+
+# imgNoisy
+xvalues = np.linspace(-int(len(colData_imgNoisy)/2), int(len(colData_imgNoisy)/2)-1, len(colData_imgNoisy))
+#xvalues = np.linspace(0, len(colData_imgNoisy), len(colData_imgNoisy))
+markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.abs(F_colData_imgNoisy)), 'g')  # fftshift() to center the low frequency coeffic
+plt.setp(markerline, 'markerfacecolor', 'g')
+plt.setp(baseline, 'color', 'r', 'linewidth', 0.5)
+plt.title("1-D Fourier Coef Mag - imgNoisy"), plt.show()
+
+
+# Plot log
+# image
+xvalues = np.linspace(-int(len(colData_image)/2), int(len(colData_image)/2)-1, len(colData_image))
+#xvalues = np.linspace(0, len(colData_image), len(colData_image))
+markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.log(np.abs(F_colData_image))), 'g')  # fftshift() to center the low frequency coefficients around 0
+plt.setp(markerline, 'markerfacecolor', 'g')
+plt.setp(baseline, 'color','r', 'linewidth', 0.5)
+plt.title("1-D Fourier Coef Mag - image - log"), plt.show()
+
+# land
+xvalues = np.linspace(-int(len(colData_land)/2), int(len(colData_land)/2)-1, len(colData_land))
+#xvalues = np.linspace(0, len(colData_land), len(colData_land))
+markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.log(np.abs(F_colData_land))), 'g')  # fftshift() to center the low frequency coefficients around 0
+plt.setp(markerline, 'markerfacecolor', 'g')
+plt.setp(baseline, 'color','r', 'linewidth', 0.5)
+plt.title("1-D Fourier Coef Mag - land - log"), plt.show()
+
+# imgNoisy
+xvalues = np.linspace(-int(len(colData_imgNoisy)/2), int(len(colData_imgNoisy)/2)-1, len(colData_imgNoisy))
+#xvalues = np.linspace(0, len(colData_imgNoisy), len(colData_imgNoisy))
+markerline, stemlines, baseline = plt.stem(xvalues, np.fft.fftshift(np.log(np.abs(F_colData_imgNoisy))), 'g')  # fftshift() to center the low frequency coeffic
+plt.setp(markerline, 'markerfacecolor', 'g')
+plt.setp(baseline, 'color', 'r', 'linewidth', 0.5)
+plt.title("1-D Fourier Coef Mag - imgNoisy - log"), plt.show()
+
 
 # =========================== Frequency Filtering 5.1 =========================================
 
@@ -183,7 +271,7 @@ for n in range(1, 5):
 # plt.show()
 plt.savefig('butterworthFilters.jpg', bbox_inches='tight')
 
-# =========================== Frequency Filtering 5.2 =========================================
+# =========================== Frequency Filtering 5.2 =======================================
 
 # Ideal high pass filtered image
 grayImgHighIdeal = grayImg - grayImgLowPass
